@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConsultorioMedico+ - Plataforma de Telemedicina</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app"></div>
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <div class="login-card">
+                <h1>🏥 ConsultorioMedico+</h1>
+                
+                <!-- FORMULARIO DE LOGIN -->
+                <div id="login-form" class="auth-form active">
+                    <h2>Iniciar Sesión</h2>
+                    <form onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="login-email" placeholder="tu@email.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña</label>
+                            <input type="password" id="login-password" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Ingresar</button>
+                    </form>
+                    <p class="switch-auth">
+                        ¿No tienes cuenta? <button onclick="switchToRegister()" class="link-btn">Regístrate aquí</button>
+                    </p>
+                </div>
+
+                <!-- FORMULARIO DE REGISTRO -->
+                <div id="register-form" class="auth-form">
+                    <h2>Registrarse</h2>
+                    <form onsubmit="handleRegister(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nombre</label>
+                                <input type="text" id="register-nombre" placeholder="Juan" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Apellido</label>
+                                <input type="text" id="register-apellido" placeholder="Pérez" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="register-email" placeholder="tu@email.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña</label>
+                            <input type="password" id="register-password" placeholder="••••••••" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="tel" id="register-telefono" placeholder="+34123456789" required>
+                        </div>
+                        <div class="form-group">
+                            <label>¿Eres doctor o paciente?</label>
+                            <select id="register-tipo" onchange="toggleDoctorFields()" required>
+                                <option value="paciente">Soy Paciente</option>
+                                <option value="doctor">Soy Doctor</option>
+                            </select>
+                        </div>
+                        <div id="doctor-fields" style="display:none;">
+                            <div class="form-group">
+                                <label>Especialidad</label>
+                                <select id="register-especialidad" required>
+                                    <option value="">Selecciona especialidad</option>
+                                    <option value="Cardiología">Cardiología</option>
+                                    <option value="Dermatología">Dermatología</option>
+                                    <option value="Neurología">Neurología</option>
+                                    <option value="Pediatría">Pediatría</option>
+                                    <option value="Psiquiatría">Psiquiatría</option>
+                                    <option value="Medicina General">Medicina General</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Número de Licencia</label>
+                                <input type="text" id="register-licencia" placeholder="ABC123456">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">Registrarse</button>
+                    </form>
+                    <p class="switch-auth">
+                        ¿Ya tienes cuenta? <button onclick="switchToLogin()" class="link-btn">Inicia sesión aquí</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL -->
+    <div id="dashboard-screen" class="screen">
+        <header class="app-header">
+            <div class="header-left">
+                <h1>🏥 ConsultorioMedico+</h1>
+                <p class="user-name" id="user-name">Bienvenido</p>
+            </div>
+            <nav class="nav-menu">
+                <button onclick="showView('dashboard')" class="nav-btn" id="nav-dashboard">📊 Dashboard</button>
+                <button onclick="showView('doctores')" class="nav-btn" id="nav-doctores">👨‍⚕️ Doctores</button>
+                <button onclick="showView('citas')" class="nav-btn" id="nav-citas">📅 Mis Citas</button>
+                <button onclick="showView('historial')" class="nav-btn" id="nav-historial" style="display:none;">📄 Historial</button>
+                <button onclick="showView('pagos')" class="nav-btn" id="nav-pagos">💳 Pagos</button>
+                <button onclick="logout()" class="logout-btn">🚪 Cerrar sesión</button>
+            </nav>
+        </header>
+
+        <div id="notificacion" class="notificacion"></div>
+
+        <main class="main-content">
+            <!-- VISTA: DASHBOARD -->
+            <section id="view-dashboard" class="view active">
+                <h2>📊 Mi Dashboard</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 id="total-citas">0</h3>
+                        <p>Citas Totales</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="citas-proximas">0</h3>
+                        <p>Citas Próximas</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>⭐ 5.0</h3>
+                        <p>Mi Calificación</p>
+                    </div>
+                    <div class="stat-card" id="ingresos-card" style="display:none;">
+                        <h3 id="total-ingresos">$0</h3>
+                        <p>Ingresos</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VISTA: DOCTORES -->
+            <section id="view-doctores" class="view">
+                <h2>👨‍⚕️ Nuestros Doctores</h2>
+                <div class="filtros">
+                    <select id="filtro-especialidad" onchange="filtrarDoctores()">
+                        <option value="">Todas las especialidades</option>
+                        <option value="Cardiología">Cardiología</option>
+                        <option value="Dermatología">Dermatología</option>
+                        <option value="Neurología">Neurología</option>
+                        <option value="Pediatría">Pediatría</option>
+                        <option value="Psiquiatría">Psiquiatría</option>
+                        <option value="Medicina General">Medicina General</option>
+                    </select>
+                </div>
+                <div id="doctores-grid" class="doctores-grid"></div>
+            </section>
+
+            <!-- VISTA: MIS CITAS -->
+            <section id="view-citas" class="view">
+                <h2>📅 Mis Citas</h2>
+                <div class="filtros">
+                    <select id="filtro-citas" onchange="filtrarCitas()">
+                        <option value="">Todos los estados</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="confirmada">Confirmada</option>
+                        <option value="completada">Completada</option>
+                        <option value="cancelada">Cancelada</option>
+                    </select>
+                </div>
+                <div id="citas-list" class="citas-list"></div>
+            </section>
+
+            <!-- VISTA: HISTORIAL MÉDICO -->
+            <section id="view-historial" class="view">
+                <h2>📄 Historial Médico</h2>
+                <div id="historial-list" class="historial-list"></div>
+            </section>
+
+            <!-- VISTA: PAGOS -->
+            <section id="view-pagos" class="view">
+                <h2>💳 Historial de Pagos</h2>
+                <div class="filtros">
+                    <select id="filtro-pagos" onchange="filtrarPagos()">
+                        <option value="">Todos los estados</option>
+                        <option value="completado">Completado</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="fallido">Fallido</option>
+                    </select>
+                </div>
+                <div id="pagos-list" class="pagos-list"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL PARA AGENDAR CITA -->
+    <div id="modal-cita" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarModal('modal-cita')">&times;</span>
+            <h3 id="modal-doctor-name">Agendar cita</h3>
+            <form onsubmit="agendarCita(event)">
+                <div class="form-group">
+                    <label>Fecha y Hora</label>
+                    <input type="datetime-local" id="cita-fecha" required>
+                </div>
+                <div class="form-group">
+                    <label>Motivo de consulta</label>
+                    <textarea id="cita-motivo" required rows="4"></textarea>
+                </div>
+                <input type="hidden" id="cita-doctor-id">
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Agendar</button>
+                    <button type="button" class="btn-secondary" onclick="cerrarModal('modal-cita')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
