@@ -158,7 +158,7 @@ function loadDashboardStats() {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.success) {
+        if (data.success && data.citas) {
             allCitas = data.citas;
             const totalCitas = allCitas.length;
             const citasProximas = allCitas.filter(c => new Date(c.fecha) > new Date() && c.estado !== 'cancelada').length;
@@ -172,16 +172,31 @@ function loadDashboardStats() {
 
 function loadDoctores() {
     fetch(`${API_URL}/doctors`)
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+    })
     .then(data => {
-        if (data.success) {
+        console.log('Respuesta de doctores:', data);
+        if (data.success && data.doctores) {
             allDoctores = data.doctores;
             renderDoctores(allDoctores);
+        } else if (data.doctores) {
+            allDoctores = data.doctores;
+            renderDoctores(allDoctores);
+        } else {
+            throw new Error('No se encontraron doctores en la respuesta');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showNotificacion('Error al cargar doctores', 'error');
+        console.error('Error cargando doctores:', error);
+        showNotificacion('Error al cargar doctores: ' + error.message, 'error');
+        const grid = document.getElementById('doctores-grid');
+        if (grid) {
+            grid.innerHTML = '<p class="no-data">Error al cargar doctores. Verifica que el servidor esté activo.</p>';
+        }
     });
 }
 
@@ -191,7 +206,10 @@ function loadCitas() {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.success) {
+        if (data.success && data.citas) {
+            allCitas = data.citas;
+            renderCitas(allCitas);
+        } else if (data.citas) {
             allCitas = data.citas;
             renderCitas(allCitas);
         }
@@ -208,7 +226,10 @@ function loadHistorial() {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.success) {
+        if (data.success && data.historial) {
+            allHistorial = data.historial;
+            renderHistorial(allHistorial);
+        } else if (data.historial) {
             allHistorial = data.historial;
             renderHistorial(allHistorial);
         }
@@ -225,7 +246,10 @@ function loadPagos() {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.success) {
+        if (data.success && data.pagos) {
+            allPagos = data.pagos;
+            renderPagos(allPagos);
+        } else if (data.pagos) {
             allPagos = data.pagos;
             renderPagos(allPagos);
         }
@@ -239,9 +263,11 @@ function loadPagos() {
 // ===== RENDER FUNCTIONS =====
 function renderDoctores(doctores) {
     const grid = document.getElementById('doctores-grid');
+    if (!grid) return;
+    
     grid.innerHTML = '';
 
-    if (doctores.length === 0) {
+    if (!doctores || doctores.length === 0) {
         grid.innerHTML = '<p class="no-data">No hay doctores disponibles</p>';
         return;
     }
@@ -249,16 +275,17 @@ function renderDoctores(doctores) {
     doctores.forEach(doctor => {
         const card = document.createElement('div');
         card.className = 'doctor-card';
+        const nombreCompleto = doctor.nombreCompleto || `${doctor.nombre} ${doctor.apellido}`;
         card.innerHTML = `
             <div class="doctor-header">
-                <h3>${doctor.nombreCompleto}</h3>
-                <span class="rating">⭐ ${doctor.calificacion}/5</span>
+                <h3>${nombreCompleto}</h3>
+                <span class="rating">⭐ ${doctor.calificacion || 5}/5</span>
             </div>
             <p><strong>Especialidad:</strong> ${doctor.especialidad}</p>
             <p><strong>Experiencia:</strong> ${doctor.experiencia || 0} años</p>
-            <p><strong>Consulta:</strong> $${doctor.precioConsulta}</p>
+            <p><strong>Consulta:</strong> $${doctor.precioConsulta || 50}</p>
             ${doctor.biografia ? `<p><strong>Biografía:</strong> ${doctor.biografia}</p>` : ''}
-            <button class="btn-agendar" onclick="abrirModalCita('${doctor._id}', '${doctor.nombreCompleto}')">Agendar cita</button>
+            <button class="btn-agendar" onclick="abrirModalCita('${doctor._id}', '${nombreCompleto.replace(/'/g, "\\'")}')">Agendar cita</button>
         `;
         grid.appendChild(card);
     });
@@ -266,9 +293,11 @@ function renderDoctores(doctores) {
 
 function renderCitas(citas) {
     const list = document.getElementById('citas-list');
+    if (!list) return;
+    
     list.innerHTML = '';
 
-    if (citas.length === 0) {
+    if (!citas || citas.length === 0) {
         list.innerHTML = '<p class="no-data">No hay citas</p>';
         return;
     }
@@ -296,9 +325,11 @@ function renderCitas(citas) {
 
 function renderHistorial(historial) {
     const list = document.getElementById('historial-list');
+    if (!list) return;
+    
     list.innerHTML = '';
 
-    if (historial.length === 0) {
+    if (!historial || historial.length === 0) {
         list.innerHTML = '<p class="no-data">No hay registros en tu historial médico</p>';
         return;
     }
@@ -334,9 +365,11 @@ function renderHistorial(historial) {
 
 function renderPagos(pagos) {
     const list = document.getElementById('pagos-list');
+    if (!list) return;
+    
     list.innerHTML = '';
 
-    if (pagos.length === 0) {
+    if (!pagos || pagos.length === 0) {
         list.innerHTML = '<p class="no-data">No hay pagos registrados</p>';
         return;
     }
@@ -349,7 +382,7 @@ function renderPagos(pagos) {
                 <h4>Pago - ${pago.nombrePaciente} → ${pago.nombreDoctor}</h4>
                 <span class="status ${pago.estado}">${pago.estado}</span>
             </div>
-            <p><strong>💵 Monto:</strong> $${pago.monto} ${pago.moneda}</p>
+            <p><strong>💵 Monto:</strong> $${pago.monto} ${pago.moneda || 'USD'}</p>
             <p><strong>💳 Método:</strong> ${pago.metodo}</p>
             <p><strong>📅 Fecha:</strong> ${new Date(pago.createdAt).toLocaleString('es-ES')}</p>
             ${pago.descripcion ? `<p><strong>Descripción:</strong> ${pago.descripcion}</p>` : ''}
